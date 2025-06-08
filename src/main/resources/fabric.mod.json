@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "meteor-nbt-io",
+  "version": "${version}",
+  "name": "Meteor NBT-IO Addon",
+  "description": "Provide nbt import/export feature.",
+  "authors": [
+    "Lumine1909"
+  ],
+  "contact": {
+    "repo": "https://github.com/Lumine1909/meteor-nbt-io"
+  },
+  "icon": "assets/template/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "meteor": [
+      "io.github.lumine1909.nbtio.NbtIoAddon"
+    ]
+  },
+  "mixins": [
+    "meteor-nbt-io.mixins.json"
+  ],
+  "custom": {
+    "meteor-client:color": "102,204,255"
+  },
+  "depends": {
+    "java": ">=21",
+    "minecraft": ["${mc_version}"],
+    "meteor-client": "*"
+  }
+}
