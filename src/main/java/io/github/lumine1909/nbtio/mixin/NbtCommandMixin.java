@@ -2,11 +2,13 @@ package io.github.lumine1909.nbtio.mixin;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.github.lumine1909.nbtio.NbtIoAddon;
 import meteordevelopment.meteorclient.commands.Command;
 import meteordevelopment.meteorclient.commands.commands.NbtCommand;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
 import net.minecraft.world.item.ItemStack;
@@ -24,22 +26,42 @@ public abstract class NbtCommandMixin extends Command {
     }
 
     @Unique
-    private static String getStack() {
-        LocalPlayer player = Minecraft.getInstance().player;
-        assert player != null;
-        ItemStack item = player.inventoryMenu.getSlot(36 + player.getInventory().selected).getItem();
-        if (!item.isEmpty()) {
-            return item.save(player.registryAccess()).toString();
+    private int importFromNbt(String nbtAsString, String failMessage) {
+        try {
+            ItemStack item = ItemStack.CODEC.decode(NbtOps.INSTANCE, TagParser.parseCompoundFully(nbtAsString)).getOrThrow().getFirst();
+            setStack(item);
+            this.info("Loaded nbt as item to your main hand");
+        } catch (Exception e) {
+            NbtIoAddon.LOG.error("Failed to import nbt!", e);
+            this.info(failMessage);
+            return 0;
         }
-        return "{}";
+        return SINGLE_SUCCESS;
+    }
+
+    @Unique
+    private int exportToNbt() {
+        try {
+            LocalPlayer player = Minecraft.getInstance().player;
+            assert player != null;
+            ItemStack item = player.inventoryMenu.getSlot(36 + player.getInventory().getSelectedSlot()).getItem();
+            String nbt = ItemStack.OPTIONAL_CODEC.encodeStart(NbtOps.INSTANCE, item).getOrThrow().toString();
+            Minecraft.getInstance().keyboardHandler.setClipboard(nbt);
+            this.info("Saved nbt to your clipboard");
+            return SINGLE_SUCCESS;
+        } catch (Exception e) {
+            NbtIoAddon.LOG.error("Failed to import nbt: ", e);
+            this.info("Failed to save nbt to clipboard, check log for details");
+            return 0;
+        }
     }
 
     @Unique
     private static void setStack(ItemStack stack) {
         LocalPlayer player = Minecraft.getInstance().player;
         assert player != null;
-        player.connection.send(new ServerboundSetCreativeModeSlotPacket(36 + player.getInventory().selected, stack));
-        player.inventoryMenu.getSlot(36 + player.getInventory().selected).setByPlayer(stack);
+        player.connection.send(new ServerboundSetCreativeModeSlotPacket(36 + player.getInventory().getSelectedSlot(), stack));
+        player.inventoryMenu.getSlot(36 + player.getInventory().getSelectedSlot()).setByPlayer(stack);
     }
 
     @Inject(
@@ -55,25 +77,6 @@ public abstract class NbtCommandMixin extends Command {
             String nbtAsString = StringArgumentType.getString(context, "nbt");
             return importFromNbt(nbtAsString, "Failed to parse nbt from input, check log for details");
         })));
-        builder.then(literal("export").executes(context -> {
-            String nbt = getStack();
-            Minecraft.getInstance().keyboardHandler.setClipboard(nbt);
-            this.info("Copied nbt to your clipboard");
-            return SINGLE_SUCCESS;
-        }));
-    }
-
-    @Unique
-    private int importFromNbt(String nbtAsString, String failMessage) {
-        try {
-            ItemStack item = ItemStack.parseOptional(Minecraft.getInstance().player.registryAccess(), TagParser.parseTag(nbtAsString));
-            setStack(item);
-            this.info("Loaded nbt as item to your main hand");
-        } catch (Exception e) {
-            e.printStackTrace();
-            this.info(failMessage);
-            return 0;
-        }
-        return SINGLE_SUCCESS;
+        builder.then(literal("export").executes(context -> exportToNbt()));
     }
 }
