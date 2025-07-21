@@ -28,7 +28,9 @@ public abstract class NbtCommandMixin extends Command {
     @Unique
     private int importFromNbt(String nbtAsString, String failMessage) {
         try {
-            ItemStack item = ItemStack.CODEC.decode(NbtOps.INSTANCE, TagParser.parseCompoundFully(nbtAsString)).getOrThrow().getFirst();
+            LocalPlayer player = Minecraft.getInstance().player;
+            assert player != null;
+            ItemStack item = ItemStack.CODEC.decode(player.registryAccess().createSerializationContext(NbtOps.INSTANCE), TagParser.parseCompoundFully(nbtAsString)).getOrThrow().getFirst();
             setStack(item);
             this.info("Loaded nbt as item to your main hand");
         } catch (Exception e) {
@@ -45,7 +47,7 @@ public abstract class NbtCommandMixin extends Command {
             LocalPlayer player = Minecraft.getInstance().player;
             assert player != null;
             ItemStack item = player.inventoryMenu.getSlot(36 + player.getInventory().getSelectedSlot()).getItem();
-            String nbt = ItemStack.OPTIONAL_CODEC.encodeStart(NbtOps.INSTANCE, item).getOrThrow().toString();
+            String nbt = ItemStack.OPTIONAL_CODEC.encodeStart(player.registryAccess().createSerializationContext(NbtOps.INSTANCE), item).getOrThrow().toString();
             Minecraft.getInstance().keyboardHandler.setClipboard(nbt);
             this.info("Saved nbt to your clipboard");
             return SINGLE_SUCCESS;
