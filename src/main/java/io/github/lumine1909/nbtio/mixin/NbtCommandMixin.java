@@ -66,19 +66,27 @@ public abstract class NbtCommandMixin extends Command {
         player.inventoryMenu.getSlot(36 + player.getInventory().getSelectedSlot()).setByPlayer(stack);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Inject(
         method = "build",
         at = @At(value = "TAIL"),
         remap = false
     )
     private void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder, CallbackInfo cib) {
-        builder.then(literal("import").executes(context -> {
-            String nbtAsString = Minecraft.getInstance().keyboardHandler.getClipboard();
-            return importFromNbt(nbtAsString, "Failed to parse nbt from clipboard, check log for details");
-        }).then(argument("nbt", StringArgumentType.greedyString()).executes(context -> {
-            String nbtAsString = StringArgumentType.getString(context, "nbt");
-            return importFromNbt(nbtAsString, "Failed to parse nbt from input, check log for details");
-        })));
-        builder.then(literal("export").executes(context -> exportToNbt()));
+        builder.then(
+            (LiteralArgumentBuilder) literal("import")
+                .executes(context -> {
+                    String nbtAsString = Minecraft.getInstance().keyboardHandler.getClipboard();
+                    return importFromNbt(nbtAsString, "Failed to parse nbt from clipboard, check log for details");
+                })
+                .then(argument("nbt", StringArgumentType.greedyString()).executes(context -> {
+                    String nbtAsString = StringArgumentType.getString(context, "nbt");
+                    return importFromNbt(nbtAsString, "Failed to parse nbt from input, check log for details");
+                }))
+        );
+        builder.then(
+            (LiteralArgumentBuilder) literal("export")
+                .executes(context -> exportToNbt())
+        );
     }
 }

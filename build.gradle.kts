@@ -1,12 +1,10 @@
 plugins {
-    id("fabric-loom") version "1.14-SNAPSHOT"
+    id("net.fabricmc.fabric-loom") version "1.17-SNAPSHOT"
 }
 
-base {
-    archivesName = properties["archives_base_name"] as String
-    version = properties["mod_version"] as String
-    group = properties["maven_group"] as String
-}
+val archivesName = project.extra["archives_base_name"]!!
+version = project.extra["mod_version"]!!
+group = project.extra["maven_group"]!!
 
 repositories {
     maven {
@@ -21,12 +19,11 @@ repositories {
 
 dependencies {
     // Fabric
-    minecraft("com.mojang:minecraft:${properties["minecraft_version"] as String}")
-    mappings(loom.officialMojangMappings())
-    modImplementation("net.fabricmc:fabric-loader:${properties["loader_version"] as String}")
-
+    minecraft("com.mojang:minecraft:${project.extra["minecraft_version"]}")
+    implementation("net.fabricmc:fabric-loader:${project.extra["loader_version"]}")
     // Meteor
-    modImplementation("meteordevelopment:meteor-client:${properties["minecraft_version"] as String}-SNAPSHOT")
+    //implementation("meteordevelopment:meteor-client:${project.extra["minecraft_version"]}-SNAPSHOT")
+    implementation("meteordevelopment:meteor-client:26.1.2-SNAPSHOT")
 }
 
 tasks {
@@ -53,12 +50,12 @@ tasks {
     }
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
 
     withType<JavaCompile> {
         options.encoding = "UTF-8"
-        options.release = 21
+        options.release = 25
     }
 }
